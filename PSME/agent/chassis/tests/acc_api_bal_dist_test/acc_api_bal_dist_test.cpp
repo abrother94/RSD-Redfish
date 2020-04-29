@@ -248,7 +248,10 @@ void TestClass1::SetUp()
         printf("////////////Wait OLT Ready[%d] seconds\r\n", count);
         count++;
     }
-
+    
+    //Need wait a moment..//
+    usleep(5000000);
+    
     //Step 2. enable pon port//
     for (i = 0; i < pon_if_max; i++)
     {
