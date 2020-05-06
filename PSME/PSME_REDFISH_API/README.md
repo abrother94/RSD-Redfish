@@ -19,6 +19,7 @@ HTTP Request Methods used in PSME service.
 ## Using RESTful APIs  
 
   You can access PSME Redfish service without authentication or enable Session Management .
+  If you disable authentication service, you can ignore "- Required Privilege :" constrain.
   
   ## Authentication   
    
@@ -27,6 +28,7 @@ HTTP Request Methods used in PSME service.
    Enable session management and change session timeout to 30 seconds(Default is 600 seconds). 
    
       - URL     :  /redfish/v1/SessionService/
+      - Required Privilege : ConfigureComponents
       - Method  :  POST
       - Payload :   
      
@@ -36,11 +38,14 @@ HTTP Request Methods used in PSME service.
       }
    
       - Response : 200 OK
+
+   After you enable authentication service,you need have correct privilege to do GET/POST/PATCH action.
      
    Create a new session (Login) by using default UserName "admin" and Password "redfish".
    You need enable session management first.
    
       - URL     :  /redfish/v1/SessionService/Sessions
+      - Required Privilege : Login 
       - Method  :  POST
       - Payload :  
      
@@ -58,20 +63,46 @@ HTTP Request Methods used in PSME service.
    You have enable session management first and created a session as ID "1".
    
       - URL     :  /redfish/v1/SessionService/Sessions/1
+      - Required Privilege : Login 
       - Method  :  Delete
       - Payload :  
      
-	    {}
+      {}
 
       - Response : 204 NO_CONTENT
 	
   ## Account Service 
+
+   There are there type of roles supported by account service.
+
+   1.Adminstrator
+   {
+     "AssignedPrivileges":[
+     "Login","ConfigureManager","ConfigureUsers","ConfigureSelf","ConfigureComponents"
+     ]
+   }
+
+   2.Operator
+   {
+     "AssignedPrivileges":[
+     "Login","ConfigureSelf","ConfigureComponents"
+    ]
+   }
+
+   3.ReadOnly
+   {
+     "AssignedPrivileges":[
+     "Login","ConfigureSelf"
+     ]
+   }
+
   
    You can create another account to access PSME Redfish service while enable authentication service.
     
    Get default account
     
       - URL     :  /redfish/v1/AccountService/Accounts
+      - Required Privilege : Login 
       - Method  :  GET
       - Response Payload :
          
@@ -89,30 +120,16 @@ HTTP Request Methods used in PSME service.
         }
       
       - Response : 200 OK
-        
-   Change password of admin
 
-      - URL     :  /redfish/v1/AccountService/Accounts/admin
-      - Method  :  PATCH
-      - Payload :
-      
-      {
-      "UserName": "admin",
-      "Password": "redfish_new_password",
-      "Locked": false,
-      "Enabled": true,
-      "RoleId": "Administrator"
-      }
-      
-      - Response : 200 OK
-	
-   Create new account
+   Create new account (Only administrator can add new user)
       
       - URL     :  /redfish/v1/AccountService/Accounts
+      - Required Privilege :  ConfigureManager 
       - Method  :  POST
       - Payload :  
      
         { 
+        "Name":"Name_1", 
         "UserName":"User_Name_1", 
         "Password":"User_Password_1", 
         "RoleId":"Administrator",         // Administrator, Operator, ReadOnlyUser 
@@ -121,14 +138,42 @@ HTTP Request Methods used in PSME service.
         }           
 
       - Response : 201 CREATED  
+
+        
+   Administrator can change user's password 
+
+      - URL     :  /redfish/v1/AccountService/Accounts/admin
+      - Required Privilege :  ConfigureManager
+      - Method  :  PATCH
+      - Payload :
+      
+      {
+      "Password": "redfish_new_password",
+      }
+      
+      - Response : 200 OK
+
+   ReadOnlyUser only can change his own password 
+
+      - URL     :  /redfish/v1/AccountService/Accounts/U1
+      - Required Privilege : Login 
+      - Method  :  PATCH
+      - Payload :
+      
+      {
+      "Password": "redfish_new_password",
+      }
+      
+      - Response : 200 OK
   
-   Remove new account
+   Remove new account (Only administrator can delete user)
       
       - URL     :  /redfish/v1/AccountService/Accounts/User_Name_1
+      - Required Privilege :  ConfigureManager 
       - Method  :  Delete
       - Payload :  
      
-        {}           
+      {}           
 
       - Response : 200 OK
 
@@ -172,6 +217,7 @@ HTTP Request Methods used in PSME service.
    Add a subscription about ResourceAdded
 
       - URL     :  /redfish/v1/EventService/Subscriptions
+      - Required Privilege : ConfigureComponents
       - Method  :  POST
       - Payload :  
      
@@ -190,6 +236,7 @@ HTTP Request Methods used in PSME service.
    Add a subscription about ResourceRemoved
 
       - URL     :  /redfish/v1/EventService/Subscriptions
+      - Required Privilege : ConfigureComponents
       - Method  :  POST
       - Payload :  
      
@@ -208,6 +255,7 @@ HTTP Request Methods used in PSME service.
    Add a subscription about Alert
 
       - URL     :  /redfish/v1/EventService/Subscriptions
+      - Required Privilege : ConfigureComponents
       - Method  :  POST
       - Payload :  
      
@@ -226,6 +274,7 @@ HTTP Request Methods used in PSME service.
    Get subscription events
 	  
       - URL     :  /redfish/v1/EventService/Subscriptions
+      - Required Privilege : ConfigureComponents
       - Method  :  POST
       - Payload :	   	  
 
@@ -286,6 +335,7 @@ HTTP Request Methods used in PSME service.
    Delete subscription events 1
 	  
     - URL     :  /redfish/v1/EventService/Subscriptions/1
+    - Required Privilege : ConfigureComponents
     - Method  :  Delete
     - Payload :  
 
@@ -307,6 +357,7 @@ HTTP Request Methods used in PSME service.
    Can get "Model", "SerialNumber","PartNumber" information. 
     
       - URL     :  /redfish/v1/Chassis/1/
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload :    
 
@@ -327,9 +378,9 @@ HTTP Request Methods used in PSME service.
         "AssetTag": "N/A",
         "IndicatorLED": null,
         "Status":{"State": "Enabled", "Health": "OK", "HealthRollup": "OK"},
-        "Oem":{"Intel_RackScale":{"@odata.type": "#Intel.Oem.Chassis", "Location":{"Id": null, "ParentId": null¡K},
-        "Links":{"@odata.type": "#Chassis.v1_2_0.Links", "Contains":[], "ComputerSystems":[{"@odata.id": "/redfish/v1/Systems/1"¡K},
-        "Actions":{"#Chassis.Reset":{"target": "/redfish/v1/Chassis/1/Actions/Chassis.Reset", "ResetType@Redfish.AllowableValues":["ForceOff",¡K},
+        "Oem":{"Intel_RackScale":{"@odata.type": "#Intel.Oem.Chassis", "Location":{"Id": null, "ParentId": null},
+        "Links":{"@odata.type": "#Chassis.v1_2_0.Links", "Contains":[], "ComputerSystems":[{"@odata.id": "/redfish/v1/Systems/1"},
+        "Actions":{"#Chassis.Reset":{"target": "/redfish/v1/Chassis/1/Actions/Chassis.Reset", "ResetType@Redfish.AllowableValues":["ForceOff",},
         "Thermal":{"@odata.id": "/redfish/v1/Chassis/1/Thermal"},
         "Power":{"@odata.id": "/redfish/v1/Chassis/1/Power"
         }
@@ -341,6 +392,7 @@ HTTP Request Methods used in PSME service.
    Value of "FirmwareVersion" in payload like "2.1.3.59.20".
       
       - URL     :  /redfish/v1/Managers/1
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload :   
 
@@ -361,7 +413,7 @@ HTTP Request Methods used in PSME service.
         "SerialInterfaces":{"@odata.id": "/redfish/v1/Managers/1/SerialInterfaces"},
         "FirmwareVersion": "2.1.3.59.20",
         "Oem":{},
-        "Links":{"@odata.type": "#Manager.v1_0_0.Links", "ManagerForChassis":[{"@odata.id": "/redfish/v1/Chassis/1"¡K},
+        "Links":{"@odata.type": "#Manager.v1_0_0.Links", "ManagerForChassis":[{"@odata.id": "/redfish/v1/Chassis/1"},
         "NetworkProtocol":{"@odata.id": "/redfish/v1/Managers/1/NetworkProtocol"},
         "ServiceEntryPointUUID": "5f471f72-146c-11ff-aeff-dfc55209c612",
         "SerialConsole":{"ServiceEnabled": true, "MaxConcurrentSessions": 0, "ConnectTypesSupported":[]},
@@ -376,6 +428,7 @@ HTTP Request Methods used in PSME service.
    Can be read from "Reading" property in payload of Fans object 7,8.
     	  
       - URL     :  /redfish/v1/Chassis/1/Thermal
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload :  
   
@@ -388,21 +441,21 @@ HTTP Request Methods used in PSME service.
         "Description": "Collection of Thermal sensors",
         "Redundancy":[],
         "Temperatures":[
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System CPU Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Thermal Sensor Temperature",¡K}
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System CPU Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Thermal Sensor Temperature",...}
         ],
         "Fans":[
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "System Fan",¡K},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "System Fan",...},
         {
             "@odata.id": "/redfish/v1/Chassis/1/Thermal",
             "MemberId": "7",
@@ -444,6 +497,7 @@ HTTP Request Methods used in PSME service.
    Can be read from "PowerConsumedWatts" property in payload of PowerControl object 1,2.
 
       - URL     :  /redfish/v1/Chassis/1/Power
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload : 
 
@@ -515,6 +569,7 @@ HTTP Request Methods used in PSME service.
    Can be read from "Statet" in "Status" property in payload of PowerControl object 1,2.
 
       - URL     :  /redfish/v1/Chassis/1/Power
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload : 
 
@@ -586,6 +641,7 @@ HTTP Request Methods used in PSME service.
    Can be read from "ReadingCelsius" property in payload of Temperatures object 6,7.
 
       - URL     :  /redfish/v1/Chassis/1/Thermal
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload : 
 
@@ -598,12 +654,12 @@ HTTP Request Methods used in PSME service.
         "Description": "Collection of Thermal sensors",
         "Redundancy":[],
         "Temperatures":[
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System CPU Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",¡K},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System CPU Thermal Sensor Temperature",...,
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",...},
         {
         "@odata.id": "/redfish/v1/Chassis/1/Thermal",
         "MemberId": "7",
@@ -634,6 +690,7 @@ HTTP Request Methods used in PSME service.
    Can be read from "State" in "Status" property in payload of Fans object 1 to 6.
     	  
       - URL     :  /redfish/v1/Chassis/1/Thermal
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload :  
         {
@@ -645,13 +702,13 @@ HTTP Request Methods used in PSME service.
         "Description": "Collection of Thermal sensors",
         "Redundancy":[],
         "Temperatures":[
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System CPU Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Thermal Sensor Temperature",¡K}
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1", "Name": "System CPU Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Thermal Sensor Temperature",...}
         ],
         "Fans":[
         {
@@ -670,13 +727,13 @@ HTTP Request Methods used in PSME service.
         "LowerThresholdFatal": null,
         "RelatedItem":[{"@odata.id": "/redfish/v1/Chassis/1" }]
         },
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "System Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Fan",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "8", "Name": "PSU Fan",¡K}
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "System Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Fan",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "8", "Name": "PSU Fan",...}
         ]
         }	       	  
         - Response : 200 OK
@@ -687,6 +744,7 @@ HTTP Request Methods used in PSME service.
    Can be read from "ReadingCelsius" property in payload of Temperatures object 1 to 5.
 
       - URL     :  /redfish/v1/Chassis/1/Thermal
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload : 
       
@@ -715,12 +773,12 @@ HTTP Request Methods used in PSME service.
         "LowerThresholdFatal": null,
         "RelatedItem":[{"@odata.id": "/redfish/v1/Chassis/1" }]
         },
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",¡K},
-        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Thermal Sensor Temperature",¡K}
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "2", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "3", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "4", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "5", "Name": "Chassis Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "6", "Name": "PSU Thermal Sensor Temperature",...},
+        {"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "7", "Name": "PSU Thermal Sensor Temperature",...}
         ],
         "Fans":[{"@odata.id": "/redfish/v1/Chassis/1/Thermal", "MemberId": "1",¡K]
         }      
@@ -731,6 +789,7 @@ HTTP Request Methods used in PSME service.
    Collection of port 
    
        - URL     :  /redfish/v1/EthernetSwitches/1/Ports
+       - Required Privilege : Login 
        - Method  :  GET
        - Payload :       
       
@@ -769,6 +828,7 @@ HTTP Request Methods used in PSME service.
    Port 1 Present :
         
       - URL     :  /redfish/v1/EthernetSwitches/1/Ports/1
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload :  
   
@@ -805,8 +865,8 @@ HTTP Request Methods used in PSME service.
         "StaticMACs":{
         "@odata.id": "/redfish/v1/EthernetSwitches/1/Ports/1/StaticMACs"
         },
-        "Links":{"PrimaryVLAN": null, "Switch":{"@odata.id": "/redfish/v1/EthernetSwitches/1"¡K},
-        "TransceiverStatistics":{"SFP Vendor Name": "SOURCEPHOTONICS", "Part Number": "XPPXG2N1CDFA", "Serial Number": "H6B2010733", "Manufacture Date": "170510",¡K}
+        "Links":{"PrimaryVLAN": null, "Switch":{"@odata.id": "/redfish/v1/EthernetSwitches/1"...},
+        "TransceiverStatistics":{"SFP Vendor Name": "SOURCEPHOTONICS", "Part Number": "XPPXG2N1CDFA", "Serial Number": "H6B2010733", "Manufacture Date": "170510",...}
         }
         - Response : 200 OK
         
@@ -819,6 +879,7 @@ HTTP Request Methods used in PSME service.
    If transceiver not plug-in device then no such data appear in URL.
           
       - URL     :  /redfish/v1/EthernetSwitches/1/Ports/1
+      - Required Privilege : Login 
       - Method  :  GET
       - Payload :  
         {
@@ -848,7 +909,7 @@ HTTP Request Methods used in PSME service.
         "IPv6Addresses":[],
         "VLANs":{"@odata.id": "/redfish/v1/EthernetSwitches/1/Ports/1/VLANs"},
         "StaticMACs":{"@odata.id": "/redfish/v1/EthernetSwitches/1/Ports/1/StaticMACs"},
-        "Links":{"PrimaryVLAN": null, "Switch":{"@odata.id": "/redfish/v1/EthernetSwitches/1"¡K},
+        "Links":{"PrimaryVLAN": null, "Switch":{"@odata.id": "/redfish/v1/EthernetSwitches/1"...},
         "TransceiverStatistics":
         {
         "SFP Vendor Name": "SOURCEPHOTONICS",
@@ -901,10 +962,10 @@ HTTP Request Methods used in PSME service.
         "Part Number": "NA",
         "Serial Number": "NA",
         "Manufacture Date": "NA",
-        "Temperature":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,¿},
-        "Voltage":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,¿},
-        "BiasCurrent":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,¿},
-        "TxPower":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,¿}
+        "Temperature":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,...},
+        "Voltage":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,...},
+        "BiasCurrent":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,...},
+        "TxPower":{"Reading": 0, "UpperThresholdFatal": 0, "UpperThresholdCritical": 0, "LowerThresholdCritical": 0, "LowerThresholdFatal": 0,...}
         }
 
   ##  Supported Statistics of Transceivers Hardware Vendor informations 
@@ -939,6 +1000,7 @@ HTTP Request Methods used in PSME service.
   ## Reboot device through PSME
   
         - URL     :  /redfish/v1/Systems/1/Actions/ComputerSystem.Reset
+        - Required Privilege : ConfigureComponents
         - Method  :  POST
         - Payload :      
 
@@ -956,6 +1018,7 @@ HTTP Request Methods used in PSME service.
    Enbale/Disabe log service.
 	   
     - URL     :  /redfish/v1/Managers/1/LogServices/1
+    - Required Privilege : ConfigureComponents
     - Method  :  PATCH
     - Payload :      
 
@@ -968,6 +1031,7 @@ HTTP Request Methods used in PSME service.
    Get log entries of current device.
 	  
     - URL     :  /redfish/v1/Managers/1/LogServices/1/Entries
+    - Required Privilege : Login 
     - Method  :  GET
     - Payload :       
 
@@ -979,9 +1043,9 @@ HTTP Request Methods used in PSME service.
     "Description": "Collection of Logs for this System",
     "Members@odata.count": 3,
     "Members":[
-    {"@odata.id": "/redfish/v1/Managers/1/LogServices/1/Entries/0", "Id": "0",¡K},
-    {"@odata.id": "/redfish/v1/Managers/1/LogServices/1/Entries/1", "Id": "1",¡K},
-    {"@odata.id": "/redfish/v1/Managers/1/LogServices/1/Entries/2", "Id": "2",¡K}]
+    {"@odata.id": "/redfish/v1/Managers/1/LogServices/1/Entries/0", "Id": "0",...},
+    {"@odata.id": "/redfish/v1/Managers/1/LogServices/1/Entries/1", "Id": "1",...},
+    {"@odata.id": "/redfish/v1/Managers/1/LogServices/1/Entries/2", "Id": "2",...}]
     }	      	
 
     - Response : 200 OK	
@@ -989,6 +1053,7 @@ HTTP Request Methods used in PSME service.
    Clear log entries of current device.
 		  
     - URL     :  /v1/Managers/1/LogServices/1/Actions/LogService.Reset
+    - Required Privilege : ConfigureComponents
     - Method  :  POST
     - Payload : 		  
     {}
