@@ -95,6 +95,7 @@ set(SOURCES
     endpoints/task.cpp
     endpoints/update_service.cpp
     endpoints/message_registry_file_collection.cpp
+    endpoints/message_privilege_registry_file.cpp
     endpoints/message_registry_file.cpp
     endpoints/monitor.cpp
     endpoints/monitor_content_builder.cpp

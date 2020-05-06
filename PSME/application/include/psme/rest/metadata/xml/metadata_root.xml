@@ -238,6 +238,11 @@
      <edmx:Include Namespace="RedfishExtensions.v1_0_0" Alias="Redfish"/>
    </edmx:Reference>   
 
+   <edmx:Reference Uri="PrivilegeRegistry.xml">
+    <edmx:Include Namespace="PrivilegeRegistry"/>
+    <edmx:Include Namespace="PrivilegeRegistry.v1_0_0"/>
+   </edmx:Reference>
+
   <edmx:DataServices>
     <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Service">
       <EntityContainer Name="Service" Extends="ServiceRoot.v1_0_0.ServiceContainer">

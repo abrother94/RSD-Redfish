@@ -48,6 +48,7 @@ using namespace psme::rest::utils;
 using namespace psme::rest::validators;
 using namespace agent_framework::model;
 
+#ifdef BAL
 namespace
 {
 json::Value make_prototype()
@@ -61,10 +62,6 @@ json::Value make_prototype()
 }
 
 } // namespace
-
-
-
-#ifdef BAL
 typedef enum
 {
     BCMOLT_ACTION_CMD_ID_NONE = 0,

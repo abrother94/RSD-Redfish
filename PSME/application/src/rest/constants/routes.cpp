@@ -127,6 +127,12 @@ const std::string Routes::MESSAGE_REGISTRY_FILE_PATH =
         .append_regex(constants::PathParam::MESSAGE_REGISTRY_FILE_ID, constants::PathParam::ID_REGEX)
         .build();
 
+// "/redfish/v1/Registries/PrivilegeRegistry"
+const std::string Routes::MESSAGE_PRIVILEGE_REGISTRY_FILE_PATH =
+    PathBuilder(MESSAGE_REGISTRY_FILE_COLLECTION_PATH)
+        .append(constants::PathParam::MESSAGE_PRIVILEGE_REGISTRY_FILE)
+        .build();
+
 // "/redfish/v1/TaskService"
 const std::string Routes::TASK_SERVICE_PATH =
     endpoint::PathBuilder(constants::PathParam::BASE_URL)

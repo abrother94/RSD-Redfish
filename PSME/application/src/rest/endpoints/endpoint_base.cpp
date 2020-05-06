@@ -25,6 +25,8 @@
 #include "psme/rest/validators/json_validator.hpp"
 #include "psme/rest/account/manager/account_manager.hpp"
 #include "psme/rest/account/model/accountservice.hpp" 
+#include "psme/rest/endpoints/message_privilege_registry_file.hpp"
+#include "psme/rest/registries/managers/message_registry_file_manager.hpp"
 
 
 #include <locale>
@@ -82,20 +84,213 @@ void EndpointBase::update_modified_time() {
     m_modified_time = ::get_current_time();
 }
 
+unsigned int get_op_pri_or(Json::Value Privilege);
+unsigned int get_op_pri_or(Json::Value Privilege)
+{
+    int max_Pri = Privilege.size();
+    unsigned int tt_Pri = 0;
 
-bool EndpointBase::authen_check(const Request& request,const std::string& method){
+    for (int j = 0; j < max_Pri; j++)
+    {
+        if (Privilege[j] == "Login")
+            tt_Pri |= P_LOGIN;
+        else if (Privilege[j] == "ConfigureManager")
+            tt_Pri |= P_CONFIGUREMANAGER;
+        else if (Privilege[j] == "ConfigureUsers")
+            tt_Pri |= P_CONFIGUREUSERS;
+        else if (Privilege[j] == "ConfigureSelf")
+            tt_Pri |= P_CONFIGURESELF;
+        else if (Privilege[j] == "ConfigureComponents")
+            tt_Pri |= P_CONFIGURECOMPONENTS;
+        else
+            printf("No!");
+    }
 
+    return tt_Pri;
+}
+
+unsigned int EndpointBase::privilege_ov_check(const Request& request, std::string method, Json::Value PrOv, unsigned int user_privilege)
+{
+    printf("privilege_ov_check\r\n");
+    unsigned int t_Pri = 0;
+    int max_PrOv = PrOv.size();
+    if (max_PrOv > 0)
+    {
+        for (int ii = 0; ii < max_PrOv; ii++)
+        {
+            std::string body = request.get_body();
+            std::cout << "body[" << body << "]" << '\n';
+            printf("ov In Map\r\n");
+            Json::Value targets = PrOv[ii]["Targets"];
+            int max_Targets = targets.size();
+
+            for (int k = 0; k < max_Targets; k++)
+            {
+                std::string t = targets[k].asString();
+                std::size_t fd = body.find(t);
+                if (fd != std::string::npos)
+                {
+                    printf("Target[%s] in body PATCH\r\n", t.c_str());
+                    Json::Value OpMapsMethod_ov = PrOv[ii]["OperationMap"][method];
+                    int max_OpMaps_ov = OpMapsMethod_ov.size();
+                    if (max_OpMaps_ov == 1)
+                    {
+                        // AND privilege
+                        Json::Value Privilege_ov = OpMapsMethod_ov[0]["Privilege"];
+                        t_Pri = get_op_pri_or(Privilege_ov);
+
+                        unsigned int f = (t_Pri & user_privilege) & user_privilege;
+                        printf("And Fin Pri[0x%x] user_privilege[%x] f[%x]\r\n", t_Pri, user_privilege, f);
+                        if ((t_Pri == f) && t_Pri != 0)
+                        {
+                            return 1;
+                        }
+                        else
+                        {
+                            printf("ov No auth!!\r\n");
+                            return 0;
+                        }
+                    }
+                    else if (max_OpMaps_ov > 1)
+                    {
+                        // OR privilege
+                        t_Pri = 0;
+                        for (int kk = 0; kk < max_OpMaps_ov; kk++)
+                        {
+                            Json::Value Privilege_ov_m = OpMapsMethod_ov[kk]["Privilege"];
+                            t_Pri |= get_op_pri_or(Privilege_ov_m);
+                            unsigned int f = (t_Pri & user_privilege) & user_privilege;
+                            printf("Or Fin Pri[0x%x] user_privilege[%x] f[%x]\r\n", t_Pri, user_privilege, f);
+                            if ((t_Pri & f) && t_Pri != 0)
+                            {
+                                printf("ov OR auth!!\r\n");
+                                return 1;
+                            }
+                            else
+                            {
+                                printf("ov OR No auth!!\r\n");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        printf("ov OR No auth!! not have method can get\r\n");
+                        return 0;
+                    }
+                }
+                else
+                {
+                    printf("target not found in body\r\n");
+                }
+            }
+            printf("ov all target pass in auth!!, others items checks by upper layer \r\n");
+            return 1;
+        }
+    }
+    printf("ov not found!!\r\n");
+    return 0;
+}
+
+unsigned int EndpointBase::privilege_check(const Request& request, std::string method, unsigned int user_privilege, std::string role)
+{
+    try
+    {
+        printf("privilege_check user_privilege[0x%x] method[%s] role[%s]\r\n", user_privilege, method.c_str(), role.c_str());
+        const auto &file = registries::MessageRegistryFileManager::get_instance()->get_file_by_id(2);
+        Json::Value Jsons = file.get_pri_json()["Mappings"];
+        int max_entity = Jsons.size();
+
+        std::string body = request.get_body();
+        std::cout << "pri chk body[" << body << "]" << '\n';
+
+        for (int i = 0; i < max_entity; i++)
+        {
+            std::string entity_name = Jsons[i]["Entity"].asString().c_str();
+            std::size_t found = request.get_url().find(entity_name);
+            if (found != std::string::npos)
+            {
+                Json::Value OpMapsMethod = Jsons[i]["OperationMap"][method];
+                int max_OpMaps = OpMapsMethod.size();
+                unsigned int t_Pri = 0;
+
+                if (max_OpMaps == 1)
+                {
+                    Json::Value Privilege_a = OpMapsMethod[0]["Privilege"];
+                    t_Pri = get_op_pri_or(Privilege_a);
+                    if (Jsons[i].isMember("PropertyOverrides"))
+                    {
+                        if (privilege_ov_check(request, method, Jsons[i]["PropertyOverrides"], user_privilege))
+                        {
+                            printf("ov chk ok\r\n");
+                            return 1;
+                        }
+                    }
+
+                    unsigned int f = (t_Pri & user_privilege) & user_privilege;
+                    printf("And Fin Pri[0x%x] user_privilege[%x] f[%x]\r\n", t_Pri, user_privilege, f);
+                    if ((t_Pri == f) && t_Pri != 0)
+                    {
+                        return 1;
+                    }
+                    else
+                    {
+                        printf("No auth!!\r\n");
+                        return 0;
+                    }
+                }
+                else if (max_OpMaps > 1)
+                {
+                    //Todo: Check "OR" privilege group of Entity in Privilege file
+                    for (int ll = 0; ll < max_OpMaps; ll++)
+                    {
+                        Json::Value Privilege_o = OpMapsMethod[ll]["Privilege"];
+                        t_Pri |= get_op_pri_or(Privilege_o);
+                        unsigned int f = (t_Pri & user_privilege) & user_privilege;
+                        printf("And Fin Pri[0x%x] user_privilege[%x] f[%x]\r\n", t_Pri, user_privilege, f);
+                        if ((t_Pri == f) && t_Pri != 0)
+                        {
+                            printf("OR auth!!\r\n");
+                            return 1;
+                        }
+                        else
+                            printf("OR No auth!! go on!\r\n");
+                    }
+                }
+                else
+                {
+                    printf("OR No auth!! can't get method\r\n");
+                    return 0;
+                }
+            }
+            else
+                std::cout <<  "not found entity" << entity_name <<'\n';
+        }
+        return 0;
+    }
+    catch (const agent_framework::exceptions::NotFound &ex)
+    {
+        log_error(GET_LOGGER("rest"), "privilege_check Not found exception: " << ex.what());
+        return 0;
+    }
+}
+
+bool EndpointBase::authen_check(const Request &request, const std::string &method)
+{
+    try
+    {
     std::string username{};
     std::string password{};
     std::string token{};
     std::string srcip{};
-
     token	= request.get_header("xAuthGen");
     username	= request.get_header("UserName");
     password	= request.get_header("Password");
     srcip       = request.get_header("SrcIp");
  	
-    std::cout << "url[" << request.get_url() << "]token[" << token << "]" << "username[" << username << "]" << "password[" << password << "]" << "srcip[" << srcip << "]";
+        std::cout << "url[" << request.get_url() << "]token[" << token << "]"
+                  << "username[" << username << "]"
+                  << "password[" << password << "]"
+                  << "srcip[" << srcip << "]";
 
     bool SessionServiceEnable = SessionManager::get_instance()->GetSessionConfigEnable();	
     bool BasicAuthenEnable = SessionManager::get_instance()->GetBasicAuthenServiceConfigEnable();	
@@ -114,11 +309,18 @@ bool EndpointBase::authen_check(const Request& request,const std::string& method
                     Session new_session = SessionManager::get_instance()->getSession_by_Token(token);
                     const auto &account = AccountManager::get_instance()->getAccount(new_session.get_username());
 
-                    /*Check read/write privilege */
-                    /*Todo , Use "Privilege Mappings" to do more specific constrain*/
-                    if ((account.get_roleid() == "ReadOnlyUser") && (method == "POST" || method == "PATCH" || method == "DELETE"))
+                        /*Check if this account username locked*/
+                        if (account.get_locked() == true)
+                            return false;
+
+                        /*Check if this account enabled*/
+                        if (account.get_enabled() != true)
                         return false;
+
+                        if (privilege_check(request, method, account.get_privilege(), account.get_roleid()))
                     return true;
+                        else
+                            return false;
                 }
                 else
                     return false;
@@ -138,9 +340,9 @@ bool EndpointBase::authen_check(const Request& request,const std::string& method
             if(account.get_enabled() != true)
                 return false;
 			
-            /*Check read/write priviledge */
-            /*Todo , Use "Privilege Mappings" to do more specific constrain*/					
-             if((account.get_roleid() == "ReadOnlyUser") && (method == "POST" || method == "PATCH" || method == "DELETE") )
+                if (privilege_check(request, method, account.get_privilege(), account.get_roleid()))
+                    return true;
+                else
                 return false;			 	
 
             int res  =AccountManager::get_instance()->login(username, password);	
@@ -157,6 +359,12 @@ bool EndpointBase::authen_check(const Request& request,const std::string& method
 	 }
         else		
 	     return false;
+    }
+}
+    catch (const agent_framework::exceptions::NotFound &ex)
+    {
+        log_error(GET_LOGGER("rest"), "authen_check Not found exception: " << ex.what());
+        return false;
     }
 }
 

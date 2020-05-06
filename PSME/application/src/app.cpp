@@ -191,6 +191,9 @@ void App::init_registries() {
     using namespace rest::registries;
     const std::string& base_configuration{make_base_configuration()};
     RegistryConfigurator::get_instance()->load(base_configuration);
+
+    const std::string& privilege_configuration{make_privilege_configuration()};
+    RegistryConfigurator::get_instance()->load(privilege_configuration);
 }
 
 void App::init() {

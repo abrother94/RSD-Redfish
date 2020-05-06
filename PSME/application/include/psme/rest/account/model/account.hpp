@@ -48,7 +48,14 @@ namespace model {
 
 //using model::Accountservice;
 
-
+typedef enum privilege_e
+{
+    P_LOGIN = (1 << 0),
+    P_CONFIGUREMANAGER = (1 << 1),
+    P_CONFIGUREUSERS = (1 << 2),
+    P_CONFIGURESELF = (1 << 3),
+    P_CONFIGURECOMPONENTS = (1 << 4)
+} privilege_t;
 
 /*!
  * @brief Subscription representation
@@ -340,6 +347,32 @@ public:
      */
     const std::string& get_roleid() const {
         return m_roleid;
+    }
+
+    /*!
+     * @brief Get account privilege 
+     *
+     * @return account privilege 
+     */
+    unsigned int get_privilege() const
+    {
+        if (m_roleid == "Administrator")
+        {
+            printf("Administrator");
+            return P_LOGIN | P_CONFIGUREMANAGER |  P_CONFIGUREUSERS | P_CONFIGURESELF| P_CONFIGURECOMPONENTS;
+        }
+        else if (m_roleid == "Operator")
+        {
+            printf("Operator");
+            return P_LOGIN | P_CONFIGURESELF | P_CONFIGURECOMPONENTS;
+        }
+        else if (m_roleid == "ReadOnly")
+        {
+            printf("ReadOnly");
+            return P_LOGIN | P_CONFIGURESELF;
+        }
+        else
+            return P_LOGIN | P_CONFIGURESELF;
     }
 
     /*!

@@ -75,6 +75,7 @@ const char STATIC_MAC_ID[] = "staticMacId";
 const char TASK_ID[] = "taskId";
 const char ODATA[] = "odata";
 const char MESSAGE_REGISTRY_FILE_ID[] = "messageRegistryFileId";
+const char MESSAGE_PRIVILEGE_REGISTRY_FILE[] = "PrivilegeRegistry";
 
 const char PATH_SEP = '/';
 const char VARIABLE_BEGIN = '{';

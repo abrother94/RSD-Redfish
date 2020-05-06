@@ -35,6 +35,7 @@ del_file $ITEM_PATH/usr/local/lib/
 del_file $ITEM_PATH/etc/
 
 mkdir -p $ITEM_PATH/etc/psme/certs   
+mkdir -p $ITEM_PATH/etc/psme/PrivilegeRegistry
 mkdir -p $ITEM_PATH/broadcom   
 
 touch ${PSME_ACC_SW_DIR}/nosrvlog
@@ -42,6 +43,7 @@ cp ${PSME_ACC_SCRIPT_DIR}/*                              $ITEM_PATH/usr/local/bi
 cp -rf ${PSME_ACC_SW_DIR}/mod_conf                       $ITEM_PATH/usr/local/bin
 cp ${PSME_ACC_SW_DIR}/server.key                         $ITEM_PATH/etc/psme/certs
 cp ${PSME_ACC_SW_DIR}/server.crt                         $ITEM_PATH/etc/psme/certs
+cp ${PSME_ACC_SW_DIR}/PrivilegeRegistry             	 $ITEM_PATH/etc/psme/PrivilegeRegistry/PrivilegeRegistry
 cp ${PSME_ACC_SW_DIR}/rfsrvlog                           $ITEM_PATH/etc/logrotate.d/
 cp ${PSME_ACC_SW_DIR}/*                                  $ITEM_PATH/etc/psme 2>/dev/null  
 

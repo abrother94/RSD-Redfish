@@ -90,6 +90,7 @@ extern const char STATIC_MAC_ID[];
 extern const char TASK_ID[];
 extern const char ODATA[];
 extern const char MESSAGE_REGISTRY_FILE_ID[];
+extern const char MESSAGE_PRIVILEGE_REGISTRY_FILE[];
 
 extern const char PATH_SEP;
 extern const char VARIABLE_BEGIN;

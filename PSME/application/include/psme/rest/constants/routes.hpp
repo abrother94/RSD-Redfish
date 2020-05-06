@@ -54,6 +54,7 @@ public:
     static const std::string TASK_PATH;
     static const std::string MESSAGE_REGISTRY_FILE_COLLECTION_PATH;
     static const std::string MESSAGE_REGISTRY_FILE_PATH;
+    static const std::string MESSAGE_PRIVILEGE_REGISTRY_FILE_PATH;
     static const std::string MONITOR_PATH;
 
     static const std::string CHASSIS_COLLECTION_PATH;

@@ -41,6 +41,7 @@
 #include "task_collection.hpp"
 #include "task.hpp"
 #include "message_registry_file_collection.hpp"
+#include "message_privilege_registry_file.hpp"
 #include "message_registry_file.hpp"
 #include "event_subscriptions_collection.hpp"
 #include "event_subscription.hpp"

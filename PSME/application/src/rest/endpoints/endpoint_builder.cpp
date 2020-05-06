@@ -98,6 +98,10 @@ void EndpointBuilder::build_endpoints(psme::rest::server::Multiplexer& mp) {
     mp.register_handler(MessageRegistryFile::UPtr(
         new MessageRegistryFile(constants::Routes::MESSAGE_REGISTRY_FILE_PATH)));
 
+    // "/redfish/v1/Registries/PrivilegeRegistry"
+    mp.register_handler(MessagePrivilegeRegistryFile::UPtr(
+        new MessagePrivilegeRegistryFile(constants::Routes::MESSAGE_PRIVILEGE_REGISTRY_FILE_PATH)));
+
 #ifdef CNTASK  
     // "/redfish/v1/TaskService"
     mp.register_handler(TaskService::UPtr(new TaskService(constants::Routes::TASK_SERVICE_PATH)));

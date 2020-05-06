@@ -82,16 +82,27 @@ void endpoint::Session::get(const server::Request& request, server::Response& re
     return;	
 }
 
-
-
-void endpoint::Session::del(const server::Request& req, server::Response& res) {
-
-
+void endpoint::Session::del(const server::Request &req, server::Response &res)
+{
     uint64_t deld = atoi(req.params[constants::PathParam::SESSION_ID].c_str());
+    const auto &Sessions = SessionManager::get_instance()->getSession(deld);
+    std::string token_fr_name = Sessions.get_authen_token();
 
+    std::string req_token = req.get_header("xAuthGen");
+    if (req_token.size() != 0)
+    {
+        if ("Administrator" == Sessions.get_userrole() || (req_token == token_fr_name))
+        {
+            //Only Admin and himself can delete session //
     SessionManager::get_instance()->delSession(deld);
-
     res.set_status(server::status_2XX::OK);
 }
-
-
+        else
+            res.set_status(server::status_4XX::UNAUTHORIZED);
+    }
+    else
+    {
+        SessionManager::get_instance()->delSession(deld);
+        res.set_status(server::status_2XX::OK);
+    }
+}

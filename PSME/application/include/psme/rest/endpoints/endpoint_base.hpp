@@ -62,7 +62,6 @@ public:
      */
     virtual ~EndpointBase();
 
-    bool authen_check(const Request& request,const std::string& method) override;
 
     void get(const Request& request, Response& response) override;
 
@@ -74,9 +73,13 @@ public:
 
     void put(const Request& request, Response& response) override;
 
-    /*Nick_Added Begin:*/
+    bool authen_check(const Request& request,const std::string& method) override;
+
     void exec_shell(const char* cmd, char * result_a);
-    /*Nick_Added End  :*/
+
+    unsigned int privilege_check(const Request &request, std::string method, unsigned int user_privilege, std::string role);
+
+    unsigned int privilege_ov_check(const Request &request, std::string method, Json::Value PrOv, unsigned int user_privilege);
 
 protected:
 
